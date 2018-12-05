@@ -1,0 +1,64 @@
+
+# Build protobufs
+find_package(Protobuf REQUIRED)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ../protobuf-define/${PROTO_DEFINE_FULL_NAME})
+set(PROTOBUF_INCLUDE_DIRS ${PROTOBUF_INCLUDE_DIRS} PARENT_SCOPE)
+set(PROTOBUF_LIBRARIES ${PROTOBUF_LIBRARIES} PARENT_SCOPE)
+set(PROTO_SRC ${PROTO_SRC} PARENT_SCOPE)
+set(PROTO_HEADER ${PROTO_HEADER} PARENT_SCOPE)
+set_source_files_properties(${PROTO_SRC} ${PROTO_HEADER} PROPERTIES
+                            GENERATED TRUE)
+
+
+# Include directories for our common library
+#get_property(AEMASS_COMMON_INCLUDE_DIRS TARGET aemass_common PROPERTY INCLUDE_DIRECTORIES)
+#get_property(AEMASS_COMMON_LINK_DIRS TARGET aemass_common PROPERTY LINK_DIRECTORIES)
+# Set the include directories for the aemass-common directory and the local directory.
+# (this affects local targets and fetches on the aemass-common target).
+GET_DIRECTORY_PROPERTY(CWD_INCLUDE_DIRS ./ INCLUDE_DIRECTORIES)
+GET_DIRECTORY_PROPERTY(CWD_LINK_DIRS ./ LINK_DIRECTORIES)
+
+SET(INCLUDE_DIRS_TO_SET
+${CMAKE_BINARY_DIR}
+${CWD_INCLUDE_DIRS}
+#${AEMASS_COMMON_INCLUDE_DIRS}
+${PROJECT_INCLUDE_DIR}
+${PROTOBUF_INCLUDE_DIRS}
+${CMAKE_CURRENT_BINARY_DIR}
+${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+INCLUDE_DIRECTORIES(${INCLUDE_DIRS_TO_SET})
+
+ADD_LIBRARY(protobuf_server
+    ProtobufExtensions.cpp ProtobufExtensions.hpp
+    LoopSpeedGovernor.cpp LoopSpeedGovernor.hpp
+    ${PROTO_SRCS} ${PROTO_HDRS})
+
+source_group("DataStreams Input"  FILES ${DATA_INPUT_STREAM_SOURCES})
+source_group("DataStreams Output" FILES ${DATA_OUTPUT_STREAM_SOURCES})
+
+IF (NOT WIN32)
+	SET(CONDITIONAL_LIBRARIES ${CONDITIONAL_LIBRARIES}
+		udp-tee pthread
+		)
+ENDIF()
+
+TARGET_LINK_LIBRARIES(protobuf_server
+    ${PROTOBUF_LIBRARIES} 
+    ${CONDITIONAL_LIBRARIES}
+    #${OpenCV_LIBS}
+    #${Boost_FILESYSTEM_LIBRARY}
+    #${Boost_SYSTEM_LIBRARY}
+    )
+
+set_property( TARGET protobuf_server PROPERTY INCLUDE_DIRECTORIES
+${INCLUDE_DIRS_TO_SET}
+${SYS_INCLUDE_DIRS_TO_SET}
+)
+
+TARGET_INCLUDE_DIRECTORIES(protobuf_server PUBLIC
+    ${INCLUDE_DIRS_TO_SET}
+)
+
+install(TARGETS protobuf_server DESTINATION lib${LIB_SUFFIX})

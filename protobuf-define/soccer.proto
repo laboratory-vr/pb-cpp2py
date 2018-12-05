@@ -1,0 +1,44 @@
+syntax = "proto2";
+
+package tutorial;
+
+message Person {
+  required string name = 1;
+  required int32 id = 2;
+  optional string email = 3;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    required string number = 1;
+    optional PhoneType type = 2 [default = HOME];
+  }
+
+  repeated PhoneNumber phones = 4;
+}
+
+message AddressBook {
+  repeated Person people = 1;
+}
+
+message TimeSynchronizationPacket
+{
+    // The client calculates the offset based on packet transit times and adjusts it before sending to the server.
+    required uint64 timestamp_on_client_clock_upon_arrival_to_server=1;
+
+   // This provides a termination criterion for the time synchronization process; when a sufficient number of packets have been received, the server can know due to this value.
+    required uint64 packet_number=2;
+
+    // When the server sets this to false, both client and server begin data
+    // transfer.
+    required bool continue=3;
+
+    // This value dictates to the client what the requested FPS is.  The
+    // servers will wait accordingly for certain client timestamp values to
+    // capture frames, which will hopefully effect synchronized capture.
+    required uint64 requested_fps=4;
+}
